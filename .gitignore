@@ -1,0 +1,22 @@
+*.test.conf
+*.o
+*.lo
+*.so
+*.so.*
+gibson
+# Eclipse files and directories
+.cproject
+.project
+.settings
+# Misc
+*.log
+tests
+src/configure.h
+build
+CMakeCache.txt
+CMakeFiles
+CMakeScripts
+Makefile
+cmake_install.cmake
+install_manifest.txt
+gibson.build
