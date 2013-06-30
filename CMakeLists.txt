@@ -30,8 +30,8 @@ endif (WITH_DEBUG)
 
 set( COMMON_CFLAGS "-Wall -Wno-unused-function -std=gnu99 -pedantic ${OPTIMIZATION}" )
 
-file( GLOB_RECURSE MAIN_SOURCES src/*.c )
-file( GLOB_RECURSE HEADERS src/*.h )
+file( GLOB_RECURSE MAIN_SOURCES src/gibson.c )
+file( GLOB_RECURSE HEADERS src/gibson.h )
 
 # generation
 add_library( ${PROJECT} SHARED ${MAIN_SOURCES} )
@@ -45,7 +45,20 @@ set_target_properties( ${PROJECT} PROPERTIES
 					   # Install name directory (for Mac OS X install_name_tool)
 					   INSTALL_NAME_DIR /${PREFIX}/lib )
 
+add_executable( gibson-cli src/linenoise/linenoise.c src/gibson-cli.c )
+target_link_libraries( gibson-cli gibsonclient )
+
 install( FILES ${HEADERS} DESTINATION /${PREFIX}/include/ )
+install( FILES gibson-cli DESTINATION /${PREFIX}/bin/
+ PERMISSIONS
+ OWNER_READ 
+ OWNER_WRITE 
+ OWNER_EXECUTE
+ GROUP_READ 
+ GROUP_EXECUTE 
+ WORLD_READ 
+ WORLD_EXECUTE
+)
 
 install( TARGETS ${PROJECT} 
 		 DESTINATION /${PREFIX}/lib 
