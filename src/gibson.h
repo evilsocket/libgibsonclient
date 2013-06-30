@@ -79,6 +79,7 @@ extern "C" {
 #define OP_MUNLOCK 16
 #define OP_COUNT   17
 #define OP_STATS   18
+#define OP_PING    19
 #define OP_END     0xFF
 // replies
 #define REPL_ERR 		   0
@@ -156,6 +157,7 @@ int gb_unlock(gbClient *c, char *key, int klen);
 int gb_munlock(gbClient *c, char *expr, int elen);
 int gb_count(gbClient *c, char *expr, int elen);
 int gb_stats(gbClient *c);
+int gb_ping(gbClient *c);
 int gb_quit(gbClient *c);
 
 const unsigned char *gb_reply_raw(gbClient *c);

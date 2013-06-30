@@ -396,6 +396,10 @@ int gb_stats(gbClient *c) {
 	return gb_send_command_assert(c, OP_STATS, NULL, 0, REPL_KVAL);
 }
 
+int gb_ping(gbClient *c) {
+	return gb_send_command_assert(c, OP_PING, NULL, 0, REPL_OK);
+}
+
 int gb_quit(gbClient *c) {
 	return gb_send_command_assert(c, OP_END, NULL, 0, REPL_OK);
 }

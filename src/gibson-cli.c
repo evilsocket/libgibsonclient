@@ -402,6 +402,14 @@ void gbc_stats_handler(char *input){
 	}
 }
 
+void gbc_ping_handler(char *input){
+	if( gbc_connect() ){
+		gb_ping( &client );
+		gbc_handle_response();
+		gb_disconnect(&client);
+	}
+}
+
 void gbc_quit_handler(char *input){
 	if( gbc_connect() ){
 		gb_quit( &client );
@@ -436,6 +444,7 @@ static struct gbc_op_handler op_handlers[] = {
 	{ "munlock", gbc_munlock_handler },
 	{ "count", gbc_count_handler },
 	{ "stats", gbc_stats_handler },
+	{ "ping", gbc_ping_handler },
 	{ "quit", gbc_quit_handler },
 
 	{ NULL, NULL }
