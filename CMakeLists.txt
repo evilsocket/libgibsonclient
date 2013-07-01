@@ -46,7 +46,7 @@ set_target_properties( ${PROJECT} PROPERTIES
 					   INSTALL_NAME_DIR /${PREFIX}/lib )
 
 add_executable( gibson-cli src/linenoise/linenoise.c src/gibson-cli.c )
-target_link_libraries( gibson-cli gibsonclient )
+target_link_libraries( gibson-cli libgibsonclient )
 
 install( FILES ${HEADERS} DESTINATION /${PREFIX}/include/ )
 install( FILES gibson-cli DESTINATION /${PREFIX}/bin/
