@@ -128,16 +128,35 @@ static int gbc_connect(){
 	return ret == 0;
 }
 
+static void gbc_print_string( unsigned char *buffer, size_t size ){
+	unsigned char byte;
+	unsigned int i;
+	unsigned char prev_was_print = 1;
+
+	for( i = 0; i < size; i++ ){
+		byte = buffer[i];
+		if( isprint(byte) ){
+			printf( "%s%c", prev_was_print ? "" : " ", byte );
+			prev_was_print = 1;
+		}
+		else {
+			printf( " %02X", byte );
+			prev_was_print = 0;
+		}
+	}
+}
+
 static void gbc_print_buffer( gbBuffer *buffer ){
 	if( buffer->encoding == GB_ENC_PLAIN ){
-		buffer->buffer[ buffer->size ] = 0x00;
-		printf( "<STRING> %s\n", buffer->buffer );
+		printf( "<STRING> " );
+		gbc_print_string( buffer->buffer, buffer->size );
+		printf( "\n" );
 	}
 	else if( buffer->encoding == GB_ENC_NUMBER ){
 		printf( "<NUMBER> %ld\n", *(long *)buffer->buffer );
 	}
 	else {
-		printf( "<UNKNOWN ENCODING>\n" );
+		printf( "<UNKNOWN ENCODING 0x%2X>\n", buffer->encoding );
 	}
 }
 
