@@ -80,6 +80,9 @@ extern "C" {
 #define OP_COUNT   17
 #define OP_STATS   18
 #define OP_PING    19
+#define OP_SIZEOF  20
+#define OP_MSIZEOF 21
+#define OP_ENCOF   22
 #define OP_END     0xFF
 // replies
 #define REPL_ERR 		   0
@@ -156,6 +159,9 @@ int gb_mlock(gbClient *c, char *expr, int elen, int time);
 int gb_unlock(gbClient *c, char *key, int klen);
 int gb_munlock(gbClient *c, char *expr, int elen);
 int gb_count(gbClient *c, char *expr, int elen);
+int gb_sizeof(gbClient *c, char *key, int klen );
+int gb_msizeof(gbClient *c, char *expr, int elen );
+int gb_encof(gbClient *c, char *key, int klen );
 int gb_stats(gbClient *c);
 int gb_ping(gbClient *c);
 int gb_quit(gbClient *c);

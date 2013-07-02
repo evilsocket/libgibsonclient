@@ -413,6 +413,42 @@ void gbc_count_handler(char *input){
 	}
 }
 
+void gbc_sizeof_handler(char *input){
+	char key[0xFF] = {0};
+
+	gbc_op_args( input, "%s", 1, "SIZEOF <key>", key );
+
+	if( gbc_connect() ){
+		gb_sizeof( &client, key, strlen(key) );
+		gbc_handle_response();
+		gb_disconnect(&client);
+	}
+}
+
+void gbc_msizeof_handler(char *input){
+	char key[0xFF] = {0};
+
+	gbc_op_args( input, "%s", 1, "MSIZEOF <prefix>", key );
+
+	if( gbc_connect() ){
+		gb_msizeof( &client, key, strlen(key) );
+		gbc_handle_response();
+		gb_disconnect(&client);
+	}
+}
+
+void gbc_encof_handler(char *input){
+	char key[0xFF] = {0};
+
+	gbc_op_args( input, "%s", 1, "ENCOF <key>", key );
+
+	if( gbc_connect() ){
+		gb_encof( &client, key, strlen(key) );
+		gbc_handle_response();
+		gb_disconnect(&client);
+	}
+}
+
 void gbc_stats_handler(char *input){
 	if( gbc_connect() ){
 		gb_stats( &client );
@@ -462,6 +498,9 @@ static struct gbc_op_handler op_handlers[] = {
 	{ "unlock", gbc_unlock_handler },
 	{ "munlock", gbc_munlock_handler },
 	{ "count", gbc_count_handler },
+	{ "sizeof", gbc_sizeof_handler },
+	{ "msizeof", gbc_msizeof_handler },
+	{ "encof", gbc_encof_handler },
 	{ "stats", gbc_stats_handler },
 	{ "ping", gbc_ping_handler },
 	{ "quit", gbc_quit_handler },

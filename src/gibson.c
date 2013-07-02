@@ -392,6 +392,18 @@ int gb_count(gbClient *c, char *expr, int elen) {
 	return gb_send_command_assert(c, OP_COUNT, expr, elen, REPL_VAL);
 }
 
+int gb_sizeof(gbClient *c, char *key, int klen ){
+	return gb_send_command_assert(c, OP_SIZEOF, key, klen, REPL_VAL);
+}
+
+int gb_msizeof(gbClient *c, char *expr, int elen ){
+	return gb_send_command_assert(c, OP_MSIZEOF, expr, elen, REPL_VAL);
+}
+
+int gb_encof(gbClient *c, char *key, int klen ){
+	return gb_send_command_assert(c, OP_ENCOF, key, klen, REPL_VAL);
+}
+
 int gb_stats(gbClient *c) {
 	return gb_send_command_assert(c, OP_STATS, NULL, 0, REPL_KVAL);
 }
@@ -409,7 +421,20 @@ const unsigned char *gb_reply_raw(gbClient *c){
 }
 
 long gb_reply_number(gbClient *c){
-	return *(long *)c->reply.buffer;
+	if( c->reply.size == sizeof(long) )
+		return *(long *)c->reply.buffer;
+
+	else if( c->reply.size == sizeof(int) )
+		return *(int *)c->reply.buffer;
+
+	else if( c->reply.size == sizeof(short) )
+		return *(short *)c->reply.buffer;
+
+	else if( c->reply.size == sizeof(char) )
+		return *(char *)c->reply.buffer;
+
+	else
+		return *(long *)c->reply.buffer;
 }
 
 void gb_reply_multi(gbClient *c, gbMultiBuffer *b){
