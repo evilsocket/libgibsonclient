@@ -39,6 +39,39 @@ static unsigned short port = 10128;
 static char history[0xFF] = {0},
 		   *home = NULL;
 
+typedef void (*gbc_op_handler)(char *);
+
+struct gbc_op_handler {
+	char *op;
+	gbc_op_handler handler;
+};
+
+static char *op_descriptions[] = {
+	"",
+	"SET <ttl> <key> <value>",
+	"TLL <key> <ttl>",
+	"GET <key>",
+	"DEL <key>",
+	"INC <key>",
+	"DEC <key>",
+	"LOCK <key> <seconds>",
+	"UNLOCK <key>",
+	"MSET <prefix> <value>",
+	"MTTL <prefix> <ttl>",
+	"MGET <prefix>",
+	"MDEL <prefix>",
+	"MINC <prefix>",
+	"MDEC <prefix>",
+	"MLOCK <prefix> <seconds>",
+	"MUNLOCK <prefix>",
+	"COUNT <prefix>",
+	"STATS",
+	"PING",
+	"SIZEOF <key>",
+	"MSIZEOF <prefix>",
+	"ENCOF <key>"
+};
+
 static void gbc_help( char **argv, int exitcode ){
 	printf( "Gibson client utility.\n\n" );
 
@@ -197,8 +230,8 @@ static void gbc_handle_response(){
 	}
 }
 
-#define gbc_op_args( s, fmt, n, desc, ... ) if( sscanf( (s), (fmt), __VA_ARGS__ ) != (n) ){ \
-											  printf( "ERROR: Invalid parameters, correct syntax is:\n\t%s\n", (desc) ); \
+#define gbc_op_args( s, fmt, n, op, ... ) if( sscanf( (s), (fmt), __VA_ARGS__ ) != (n) ){ \
+											  printf( "ERROR: Invalid parameters, correct syntax is:\n\t%s\n", op_descriptions[(op)] ); \
 											  return; \
 									  	    }
 
@@ -207,7 +240,7 @@ void gbc_set_handler(char *input){
 		 val[0xFF] = {0};
 	long ttl;
 
-	gbc_op_args( input, "%ld %s %s", 3, "SET <ttl> <key> <value>", &ttl, key, val );
+	gbc_op_args( input, "%ld %s %s", 3, OP_SET, &ttl, key, val );
 
 	if( gbc_connect() ){
 		gb_set( &client, key, strlen(key), val, strlen(val), ttl );
@@ -220,7 +253,7 @@ void gbc_mset_handler(char *input){
 	char key[0xFF] = {0},
 		 val[0xFF] = {0};
 
-	gbc_op_args( input, "%s %s", 2, "MSET <prefix> <value>", key, val );
+	gbc_op_args( input, "%s %s", 2, OP_MSET, key, val );
 
 	if( gbc_connect() ){
 		gb_mset( &client, key, strlen(key), val, strlen(val) );
@@ -233,7 +266,7 @@ void gbc_ttl_handler(char *input){
 	char key[0xFF] = {0};
 	long ttl;
 
-	gbc_op_args( input, "%s %ld", 2, "TLL <key> <ttl>", key, &ttl );
+	gbc_op_args( input, "%s %ld", 2, OP_TTL, key, &ttl );
 
 	if( gbc_connect() ){
 		gb_ttl( &client, key, strlen(key), ttl );
@@ -246,7 +279,7 @@ void gbc_mttl_handler(char *input){
 	char key[0xFF] = {0};
 	long ttl;
 
-	gbc_op_args( input, "%s %ld", 2, "MTTL <prefix> <ttl>", key, &ttl );
+	gbc_op_args( input, "%s %ld", 2, OP_MTTL, key, &ttl );
 
 	if( gbc_connect() ){
 		gb_mttl( &client, key, strlen(key), ttl );
@@ -258,7 +291,7 @@ void gbc_mttl_handler(char *input){
 void gbc_get_handler(char *input){
 	char key[0xFF] = {0};
 
-	gbc_op_args( input, "%s", 1, "GET <key>", key );
+	gbc_op_args( input, "%s", 1, OP_GET, key );
 
 	if( gbc_connect() ){
 		gb_get( &client, key, strlen(key) );
@@ -270,7 +303,7 @@ void gbc_get_handler(char *input){
 void gbc_mget_handler(char *input){
 	char key[0xFF] = {0};
 
-	gbc_op_args( input, "%s", 1, "MGET <prefix>", key );
+	gbc_op_args( input, "%s", 1, OP_MGET, key );
 
 	if( gbc_connect() ){
 		gb_mget( &client, key, strlen(key) );
@@ -282,7 +315,7 @@ void gbc_mget_handler(char *input){
 void gbc_del_handler(char *input){
 	char key[0xFF] = {0};
 
-	gbc_op_args( input, "%s", 1, "DEL <key>", key );
+	gbc_op_args( input, "%s", 1, OP_DEL, key );
 
 	if( gbc_connect() ){
 		gb_del( &client, key, strlen(key) );
@@ -294,7 +327,7 @@ void gbc_del_handler(char *input){
 void gbc_mdel_handler(char *input){
 	char key[0xFF] = {0};
 
-	gbc_op_args( input, "%s", 1, "MDEL <prefix>", key );
+	gbc_op_args( input, "%s", 1, OP_MDEL, key );
 
 	if( gbc_connect() ){
 		gb_mdel( &client, key, strlen(key) );
@@ -306,7 +339,7 @@ void gbc_mdel_handler(char *input){
 void gbc_inc_handler(char *input){
 	char key[0xFF] = {0};
 
-	gbc_op_args( input, "%s", 1, "INC <key>", key );
+	gbc_op_args( input, "%s", 1, OP_INC, key );
 
 	if( gbc_connect() ){
 		gb_inc( &client, key, strlen(key) );
@@ -318,7 +351,7 @@ void gbc_inc_handler(char *input){
 void gbc_minc_handler(char *input){
 	char key[0xFF] = {0};
 
-	gbc_op_args( input, "%s", 1, "MINC <prefix>", key );
+	gbc_op_args( input, "%s", 1, OP_MINC, key );
 
 	if( gbc_connect() ){
 		gb_minc( &client, key, strlen(key) );
@@ -330,7 +363,7 @@ void gbc_minc_handler(char *input){
 void gbc_mdec_handler(char *input){
 	char key[0xFF] = {0};
 
-	gbc_op_args( input, "%s", 1, "MDEC <prefix>", key );
+	gbc_op_args( input, "%s", 1, OP_MDEC, key );
 
 	if( gbc_connect() ){
 		gb_mdec( &client, key, strlen(key) );
@@ -342,7 +375,7 @@ void gbc_mdec_handler(char *input){
 void gbc_dec_handler(char *input){
 	char key[0xFF] = {0};
 
-	gbc_op_args( input, "%s", 1, "DEC <key>", key );
+	gbc_op_args( input, "%s", 1, OP_DEC, key );
 
 	if( gbc_connect() ){
 		gb_dec( &client, key, strlen(key) );
@@ -355,7 +388,7 @@ void gbc_lock_handler(char *input){
 	char key[0xFF] = {0};
 	long time;
 
-	gbc_op_args( input, "%s %ld", 2, "LOCK <key> <seconds>", key, &time );
+	gbc_op_args( input, "%s %ld", 2, OP_LOCK, key, &time );
 
 	if( gbc_connect() ){
 		gb_lock( &client, key, strlen(key), time );
@@ -368,7 +401,7 @@ void gbc_mlock_handler(char *input){
 	char key[0xFF] = {0};
 	long time;
 
-	gbc_op_args( input, "%s %ld", 2, "MLOCK <prefix> <seconds>", key, &time );
+	gbc_op_args( input, "%s %ld", 2, OP_MLOCK, key, &time );
 
 	if( gbc_connect() ){
 		gb_mlock( &client, key, strlen(key), time );
@@ -380,7 +413,7 @@ void gbc_mlock_handler(char *input){
 void gbc_unlock_handler(char *input){
 	char key[0xFF] = {0};
 
-	gbc_op_args( input, "%s", 1, "UNLOCK <key>", key );
+	gbc_op_args( input, "%s", 1, OP_UNLOCK, key );
 
 	if( gbc_connect() ){
 		gb_unlock( &client, key, strlen(key) );
@@ -392,7 +425,7 @@ void gbc_unlock_handler(char *input){
 void gbc_munlock_handler(char *input){
 	char key[0xFF] = {0};
 
-	gbc_op_args( input, "%s", 1, "MUNLOCK <prefix>", key );
+	gbc_op_args( input, "%s", 1, OP_MUNLOCK, key );
 
 	if( gbc_connect() ){
 		gb_munlock( &client, key, strlen(key) );
@@ -404,7 +437,7 @@ void gbc_munlock_handler(char *input){
 void gbc_count_handler(char *input){
 	char key[0xFF] = {0};
 
-	gbc_op_args( input, "%s", 1, "COUNT <prefix>", key );
+	gbc_op_args( input, "%s", 1, OP_COUNT, key );
 
 	if( gbc_connect() ){
 		gb_count( &client, key, strlen(key) );
@@ -416,7 +449,7 @@ void gbc_count_handler(char *input){
 void gbc_sizeof_handler(char *input){
 	char key[0xFF] = {0};
 
-	gbc_op_args( input, "%s", 1, "SIZEOF <key>", key );
+	gbc_op_args( input, "%s", 1, OP_SIZEOF, key );
 
 	if( gbc_connect() ){
 		gb_sizeof( &client, key, strlen(key) );
@@ -428,7 +461,7 @@ void gbc_sizeof_handler(char *input){
 void gbc_msizeof_handler(char *input){
 	char key[0xFF] = {0};
 
-	gbc_op_args( input, "%s", 1, "MSIZEOF <prefix>", key );
+	gbc_op_args( input, "%s", 1, OP_MSIZEOF, key );
 
 	if( gbc_connect() ){
 		gb_msizeof( &client, key, strlen(key) );
@@ -440,7 +473,7 @@ void gbc_msizeof_handler(char *input){
 void gbc_encof_handler(char *input){
 	char key[0xFF] = {0};
 
-	gbc_op_args( input, "%s", 1, "ENCOF <key>", key );
+	gbc_op_args( input, "%s", 1, OP_ENCOF, key );
 
 	if( gbc_connect() ){
 		gb_encof( &client, key, strlen(key) );
@@ -465,21 +498,6 @@ void gbc_ping_handler(char *input){
 	}
 }
 
-void gbc_quit_handler(char *input){
-	if( gbc_connect() ){
-		gb_quit( &client );
-		gbc_handle_response();
-		gb_disconnect(&client);
-	}
-}
-
-typedef void (*gbc_op_handler)(char *);
-
-struct gbc_op_handler {
-	char *op;
-	gbc_op_handler handler;
-};
-
 static struct gbc_op_handler op_handlers[] = {
 	{ "set", gbc_set_handler },
 	{ "mset", gbc_mset_handler },
@@ -503,7 +521,6 @@ static struct gbc_op_handler op_handlers[] = {
 	{ "encof", gbc_encof_handler },
 	{ "stats", gbc_stats_handler },
 	{ "ping", gbc_ping_handler },
-	{ "quit", gbc_quit_handler },
 
 	{ NULL, NULL }
 };
@@ -540,7 +557,7 @@ int main( int argc, char **argv )
 
 	linenoiseHistoryLoad(history);
 
-	printf( "\ntype :quit or :q to quit.\n\n" );
+	printf( "\ntype :help or :h for a list of commands, :quit or :q to quit.\n\n" );
 
 	char prompt[0xFF] = {0}, *input = NULL;
 
@@ -554,6 +571,12 @@ int main( int argc, char **argv )
 		if( input != NULL ){
 			if( strcmp( input, ":quit" ) == 0 || strcmp( input, ":q" ) == 0 ){
 				exit(0);
+			}
+			else if( strcmp( input, ":help" ) == 0 || strcmp( input, ":h" ) == 0 ){
+				int i;
+				for( i = OP_SET; i <= OP_ENCOF; ++i ){
+					printf( "\t%s\n", op_descriptions[i] );
+				}
 			}
 			else if( *input != 0x00 ){
 				linenoiseHistoryAdd(input);
