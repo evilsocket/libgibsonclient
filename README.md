@@ -21,6 +21,7 @@ Compilation / Installation
 In order to compile libgibsonclient, you will need cmake and autotools installed, then:
 
     $ git clone https://github.com/evilsocket/libgibsonclient.git
+    $ cd libgibsonclient
     $ git submodule init
     $ git submodule update
     $ cmake .
