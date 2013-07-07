@@ -20,10 +20,54 @@ Compilation / Installation
 ---
 In order to compile libgibsonclient, you will need cmake and autotools installed, then:
 
+    $ git clone https://github.com/evilsocket/libgibsonclient.git
+    $ git submodule init
+    $ git submodule update
     $ cmake .
     $ make
     # make install
 
+Client Usage
+---
+First of all, start with a gibson-cli -h to get the following help menu.
+
+    gibson-cli [-h|--help] [-a|--address ADDRESS] [-p|--port PORT] [-u|--unix UNIX_SOCKET_PATH]
+        -h, --help            	    Print this help and exit.
+        -a, --address ADDRESS   	TCP address of Gibson instance.
+        -p, --port PORT   		    TCP port of Gibson instance.
+        -u, --unix UNIX_SOCKET_PATH Unix socket path of Gibson instance ( overrides TCP arguments ).
+
+Let's say you want to connect to your local Gibson UNIX domain socket.
+
+    gibson-cli -u /var/run/gibson.sock
+
+Then, use the ':help' ( or just ':h' ) shortcut to get a list of available commands.
+
+    local> :h
+        SET <ttl> <key> <value>
+        TLL <key> <ttl>
+        GET <key>
+        DEL <key>
+        INC <key>
+        DEC <key>
+        LOCK <key> <seconds>
+        UNLOCK <key>
+        MSET <prefix> <value>
+        MTTL <prefix> <ttl>
+        MGET <prefix>
+        MDEL <prefix>
+        MINC <prefix>
+        MDEC <prefix>
+        MLOCK <prefix> <seconds>
+        MUNLOCK <prefix>
+        COUNT <prefix>
+        STATS
+        PING
+        SIZEOF <key>
+        MSIZEOF <prefix>
+        ENCOF <key>
+
+You can now start to use the client.
 
 License
 ---
