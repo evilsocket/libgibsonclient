@@ -28,6 +28,16 @@
  */
 #include "gibson.h"
 
+static char __gb_error_buffer[1024] = {0};
+
+#define GB_SETLASTERROR( fmt, ... ) memset( __gb_error_buffer, 0x00, 1024 ); \
+                                    sprintf( __gb_error_buffer, fmt, __VA_ARGS__ )
+
+void gb_getlasterror( char *buffer, size_t size ) {
+    memset( buffer, 0x00, size );
+    strncpy( buffer, __gb_error_buffer, size );
+}
+
 int gb_fd_select(int fd, int timeout, int readable ) {
 	struct timeval tv;
 	fd_set fds;
@@ -48,9 +58,11 @@ int gb_create_socket(int domain) {
     int s, on = 1;
 
     if ((s = socket(domain, SOCK_STREAM, 0)) == -1) {
+        GB_SETLASTERROR( "Unable to create SOCK_STREAM socket: %d", errno );
         return -1;
     }
     else if (setsockopt(s, SOL_SOCKET, SO_REUSEADDR, &on, sizeof(on)) == -1) {
+        GB_SETLASTERROR( "Unable to set SO_REUSEADDR option on socket: %d", errno );
         return -1;
     }
     else
@@ -96,22 +108,27 @@ int gb_tcp_connect(gbClient *c, char *address, int port, int timeout) {
 
 	flags = fcntl( c->fd, F_GETFL );
 	if( ( c->error = fcntl( c->fd, F_SETFL, flags | O_NONBLOCK ) ) < 0 ) {
+        GB_SETLASTERROR( "Unable to set socket in non blocking mode: %d", errno );
 		return c->error;
 	}
 
 	if( ( c->error = connect( c->fd, (struct sockaddr *)&sa, sizeof(sa) ) ) != 0 ){
-		if (errno != EINPROGRESS)
-			return c->error;
-
+		if (errno != EINPROGRESS){
+			GB_SETLASTERROR( "TCP connection to %s:%d failed : %d", address, port, errno );
+            return c->error;
+        }
 		else if( gb_fd_select( c->fd, c->timeout, 0 ) > 0) {
 			int err;
 			unsigned int len = sizeof(err);
 			if( ( c->error = getsockopt( c->fd, SOL_SOCKET, SO_ERROR, &err, &len) ) == -1 || err ){
+                GB_SETLASTERROR( "Socket operation timeout ( SO_ERROR = %d ): %d", err, errno );
 				return ( c->error = err );
 			}
 		}
-		else
-			return c->error;
+		else {
+			GB_SETLASTERROR( "Socket operation timeout: %d", errno );
+            return c->error;
+        }
 	}
 
 	strncpy( c->address, inet_ntoa(sa.sin_addr), 0xFF );
@@ -142,22 +159,27 @@ int gb_unix_connect( gbClient *c, char *socket, int timeout ){
 
 	flags = fcntl( c->fd, F_GETFL );
 	if( ( c->error = fcntl( c->fd, F_SETFL, flags | O_NONBLOCK ) ) < 0 ) {
+        GB_SETLASTERROR( "Unable to set socket in non blocking mode: %d", errno );
 		return c->error;
 	}
 
 	if( ( c->error = connect( c->fd, (struct sockaddr *)&sa, sizeof(sa) ) ) != 0 ){
-		if (errno != EINPROGRESS)
-			return c->error;
-
+		if (errno != EINPROGRESS){
+			GB_SETLASTERROR( "Unix domain connection to %s failed : %d", socket, errno );
+            return c->error;
+        }
 		else if( gb_fd_select( c->fd, c->timeout, 0 ) > 0) {
 			int err;
 			unsigned int len = sizeof(err);
 			if( ( c->error = getsockopt( c->fd, SOL_SOCKET, SO_ERROR, &err, &len) ) == -1 || err ){
+                GB_SETLASTERROR( "Socket operation timeout ( SO_ERROR = %d ): %d", err, errno );
 				return ( c->error = err );
 			}
 		}
-		else
-			return c->error;
+		else {
+			GB_SETLASTERROR( "Socket operation timeout: %d", errno );
+            return c->error;
+        }
 	}
 
 	strncpy( c->address, socket, 0xFF );
@@ -176,10 +198,14 @@ int gb_recv( gbClient *c, unsigned int msecs, void *buf, int size ) {
 		c->error = 0;
 		return recv( c->fd, buf, size, 0 );
 	}
-	else if ( c->error == 0 )
+	else if ( c->error == 0 ){
+		GB_SETLASTERROR( "Read operation timeout: %d", errno );
 		return ( c->error = -2 );
-	else
+    }
+	else {
+        GB_SETLASTERROR( "Read operation error: %d", errno );
 		return ( c->error = -1 );
+    }
 }
 
 
@@ -198,17 +224,20 @@ int gb_send(gbClient *c, unsigned int msecs, void *buf, int size) {
 		FD_SET(c->fd, &fds);
 
 		c->error = select(c->fd + 1, NULL, &fds, NULL, &tv);
-
 		if (c->error > 0) {
 			c->error = send(c->fd, (char *)buf + sent, size - sent, 0);
-			if (c->error < 0)
-				return c->error;
+			if (c->error < 0){
+                GB_SETLASTERROR( "Write operation error: %d", errno );
+                return c->error;
+            }
 
 			sent += c->error;
 		// timeout || error
 		}
-		else if ( c->error <= 0 )
+		else if ( c->error <= 0 ){
+            GB_SETLASTERROR( "Write operation timeout or error: %d", errno );
 			return c->error;
+        }
 	}
 
 	c->error = 0;

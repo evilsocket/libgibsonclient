@@ -173,6 +173,8 @@ void gb_reply_multi_free(gbMultiBuffer *b);
 
 void gb_disconnect( gbClient *c );
 
+void gb_getlasterror( char *buffer, size_t size );
+
 #ifdef __cplusplus
 }
 #endif
