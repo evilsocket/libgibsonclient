@@ -245,13 +245,13 @@ int gb_send(gbClient *c, unsigned int msecs, void *buf, int size) {
 	return sent;
 }
 
-int gb_send_command( gbClient *c, short cmd, void *data, int len ){
-	int csize = sizeof(short) + len;
-	size_t rsize = 0;
+int gb_send_command( gbClient *c, short cmd, void *data, uint32_t len ){
+	uint32_t csize = sizeof(short) + len,
+             rsize = 0;
 
 	if( c->fd )
 	{
-		if( ( c->error = gb_send( c, c->timeout, &csize, sizeof(int) ) ) != sizeof(int) )
+		if( ( c->error = gb_send( c, c->timeout, &csize, sizeof(uint32_t) ) ) != sizeof(uint32_t) )
 			return c->error;
 
 		else if( ( c->error = gb_send( c, c->timeout, &cmd, sizeof(short) ) ) != sizeof(short) )
@@ -266,7 +266,7 @@ int gb_send_command( gbClient *c, short cmd, void *data, int len ){
 		else if( ( c->error = gb_recv( c, c->timeout, &c->reply.encoding, sizeof(gbEncoding) ) ) != sizeof(gbEncoding) )
 			return c->error;
 
-		else if( ( c->error = gb_recv( c, c->timeout, &rsize, sizeof(size_t) ) ) != sizeof(size_t) )
+		else if( ( c->error = gb_recv( c, c->timeout, &rsize, sizeof(uint32_t) ) ) != sizeof(uint32_t) )
 			return c->error;
 
 		c->error = 0;
@@ -467,7 +467,7 @@ long gb_reply_number(gbClient *c){
 }
 
 void gb_reply_multi(gbClient *c, gbMultiBuffer *b){
-	size_t i, klen, vsize;
+	uint32_t i, klen, vsize;
 	gbEncoding enc;
 	gbBuffer *v;
 	unsigned char *p = c->reply.buffer;
@@ -476,7 +476,7 @@ void gb_reply_multi(gbClient *c, gbMultiBuffer *b){
 	b->keys   = (char **)NULL;
 	b->values = NULL;
 
-	b->count  = *(size_t *)p; p += sizeof(size_t);
+	b->count  = *(uint32_t *)p; p += sizeof(uint32_t);
 	b->keys   = (char **)malloc( b->count * sizeof(char *) );
 	b->values = (gbBuffer *)malloc( b->count * sizeof(gbBuffer) );
 
@@ -485,7 +485,7 @@ void gb_reply_multi(gbClient *c, gbMultiBuffer *b){
 
 		v = &b->values[i];
 
-		klen = *(size_t *)p; p += sizeof(size_t);
+		klen = *(uint32_t *)p; p += sizeof(uint32_t);
 
 		b->keys[i] = (char *)calloc( 1, klen );
 
@@ -493,7 +493,7 @@ void gb_reply_multi(gbClient *c, gbMultiBuffer *b){
 
 		enc   = *(gbEncoding *)p; p += sizeof(gbEncoding);
 
-		vsize = *(size_t *)p; p += sizeof(size_t);
+		vsize = *(uint32_t *)p; p += sizeof(uint32_t);
 
 		if( vsize > v->rsize ){
 			v->buffer = realloc( v->buffer, vsize );
