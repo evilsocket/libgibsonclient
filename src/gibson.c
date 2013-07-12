@@ -421,16 +421,10 @@ int gb_count(gbClient *c, char *expr, int elen) {
 	return gb_send_command_assert(c, OP_COUNT, expr, elen, REPL_VAL);
 }
 
-int gb_sizeof(gbClient *c, char *key, int klen ){
-	return gb_send_command_assert(c, OP_SIZEOF, key, klen, REPL_VAL);
-}
+int gb_meta(gbClient *c, char *key, int klen, char *meta, int mlen ){
+	gb_build_command( c, klen + 1 + mlen, key, klen, meta, mlen, 0 );
 
-int gb_msizeof(gbClient *c, char *expr, int elen ){
-	return gb_send_command_assert(c, OP_MSIZEOF, expr, elen, REPL_VAL);
-}
-
-int gb_encof(gbClient *c, char *key, int klen ){
-	return gb_send_command_assert(c, OP_ENCOF, key, klen, REPL_VAL);
+	return gb_send_command_assert( c, OP_META, c->request.buffer, c->request.size, REPL_VAL );
 }
 
 int gb_stats(gbClient *c) {

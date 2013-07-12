@@ -67,7 +67,7 @@ static char *op_descriptions[] = {
 	"COUNT <prefix>",
 	"STATS",
 	"PING",
-	"SIZEOF <key>",
+	"META <key> size|encoding|access|created|ttl|left|lock",
 	"MSIZEOF <prefix>",
 	"ENCOF <key>"
 };
@@ -446,37 +446,14 @@ void gbc_count_handler(char *input){
 	}
 }
 
-void gbc_sizeof_handler(char *input){
-	char key[0xFF] = {0};
+void gbc_meta_handler(char *input){
+	char key[0xFF] = {0},
+		 val[0xFF] = {0};
 
-	gbc_op_args( input, "%s", 1, OP_SIZEOF, key );
-
-	if( gbc_connect() ){
-		gb_sizeof( &client, key, strlen(key) );
-		gbc_handle_response();
-		gb_disconnect(&client);
-	}
-}
-
-void gbc_msizeof_handler(char *input){
-	char key[0xFF] = {0};
-
-	gbc_op_args( input, "%s", 1, OP_MSIZEOF, key );
+	gbc_op_args( input, "%s %s", 2, OP_META, key, val );
 
 	if( gbc_connect() ){
-		gb_msizeof( &client, key, strlen(key) );
-		gbc_handle_response();
-		gb_disconnect(&client);
-	}
-}
-
-void gbc_encof_handler(char *input){
-	char key[0xFF] = {0};
-
-	gbc_op_args( input, "%s", 1, OP_ENCOF, key );
-
-	if( gbc_connect() ){
-		gb_encof( &client, key, strlen(key) );
+		gb_meta( &client, key, strlen(key), val, strlen(val) );
 		gbc_handle_response();
 		gb_disconnect(&client);
 	}
@@ -516,12 +493,9 @@ static struct gbc_op_handler op_handlers[] = {
 	{ "unlock", gbc_unlock_handler },
 	{ "munlock", gbc_munlock_handler },
 	{ "count", gbc_count_handler },
-	{ "sizeof", gbc_sizeof_handler },
-	{ "msizeof", gbc_msizeof_handler },
-	{ "encof", gbc_encof_handler },
 	{ "stats", gbc_stats_handler },
 	{ "ping", gbc_ping_handler },
-
+    { "meta", gbc_meta_handler },
 	{ NULL, NULL }
 };
 
@@ -574,7 +548,7 @@ int main( int argc, char **argv )
 			}
 			else if( strcmp( input, ":help" ) == 0 || strcmp( input, ":h" ) == 0 ){
 				int i;
-				for( i = OP_SET; i <= OP_ENCOF; ++i ){
+				for( i = OP_SET; i <= OP_META; ++i ){
 					printf( "\t%s\n", op_descriptions[i] );
 				}
 			}
