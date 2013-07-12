@@ -71,3 +71,24 @@ install( TARGETS ${PROJECT}
 		 WORLD_READ 
 		 WORLD_EXECUTE )
 
+#packaging
+if (UNIX)
+
+    if( CMAKE_SIZEOF_VOID_P EQUAL 8 )
+        set( CPACK_DEBIAN_PACKAGE_ARCHITECTURE "amd64" )
+    else( CMAKE_SIZEOF_VOID_P EQUAL 8 )
+        set( CPACK_DEBIAN_PACKAGE_ARCHITECTURE "i386" )
+    endif( CMAKE_SIZEOF_VOID_P EQUAL 8 )
+
+    set( CPACK_GENERATOR "DEB;RPM")
+    set( CPACK_PACKAGE_NAME "libgibsonclient" )
+    set( CPACK_PACKAGE_VERSION  ${VERSION} )
+    set( CPACK_PACKAGE_FILE_NAME "${CPACK_PACKAGE_NAME}-${CPACK_PACKAGE_VERSION}-${CPACK_DEBIAN_PACKAGE_ARCHITECTURE}" ) 
+    set( CPACK_PACKAGE_DESCRIPTION_SUMMARY "Client library and application for Gibson cache server.")
+    set( CPACK_PACKAGE_DESCRIPTION "Client library and application for Gibson cache server.")
+    set( CPACK_DEBIAN_PACKAGE_SECTION "database" )
+    set( CPACK_PACKAGE_CONTACT "Simone Margaritelli evilsocket@gmail.com")
+
+    include(CPack)
+
+endif (UNIX)
