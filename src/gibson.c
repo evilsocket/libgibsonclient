@@ -469,36 +469,38 @@ void gb_reply_multi(gbClient *c, gbMultiBuffer *b){
 	b->count  = 0;
 	b->keys   = (char **)NULL;
 	b->values = NULL;
+    
+    if( c->reply.buffer != NULL ){
+        b->count  = *(uint32_t *)p; p += sizeof(uint32_t);
+        b->keys   = (char **)malloc( b->count * sizeof(char *) );
+        b->values = (gbBuffer *)malloc( b->count * sizeof(gbBuffer) );
 
-	b->count  = *(uint32_t *)p; p += sizeof(uint32_t);
-	b->keys   = (char **)malloc( b->count * sizeof(char *) );
-	b->values = (gbBuffer *)malloc( b->count * sizeof(gbBuffer) );
+        for( i = 0; i < b->count; i++ ){
+            GB_INIT_BUFFER( b->values[i] );
 
-	for( i = 0; i < b->count; i++ ){
-		GB_INIT_BUFFER( b->values[i] );
+            v = &b->values[i];
 
-		v = &b->values[i];
+            klen = *(uint32_t *)p; p += sizeof(uint32_t);
 
-		klen = *(uint32_t *)p; p += sizeof(uint32_t);
+            b->keys[i] = (char *)calloc( 1, klen );
 
-		b->keys[i] = (char *)calloc( 1, klen );
+            memcpy( b->keys[i], p, klen ); p += klen;
 
-		memcpy( b->keys[i], p, klen ); p += klen;
+            enc   = *(gbEncoding *)p; p += sizeof(gbEncoding);
 
-		enc   = *(gbEncoding *)p; p += sizeof(gbEncoding);
+            vsize = *(uint32_t *)p; p += sizeof(uint32_t);
 
-		vsize = *(uint32_t *)p; p += sizeof(uint32_t);
+            if( vsize > v->rsize ){
+                v->buffer = realloc( v->buffer, vsize );
+                v->rsize = vsize;
+            }
 
-		if( vsize > v->rsize ){
-			v->buffer = realloc( v->buffer, vsize );
-			v->rsize = vsize;
-		}
+            v->encoding = enc;
+            v->size = vsize;
 
-		v->encoding = enc;
-		v->size = vsize;
-
-		memcpy( v->buffer, p, vsize ); p += vsize;
-	}
+            memcpy( v->buffer, p, vsize ); p += vsize;
+        }
+    }
 }
 
 void gb_reply_multi_free(gbMultiBuffer *b){
@@ -511,12 +513,15 @@ void gb_reply_multi_free(gbMultiBuffer *b){
 		b->keys[i] = NULL;
 	}
 
-	free( b->values );
-	free( b->keys );
+    if( b->values != NULL )
+	    free( b->values );
+	
+    if( b->keys != NULL )
+        free( b->keys );
 
 	b->values = NULL;
-	b->keys = (char **)NULL;
-	b->count = 0;
+	b->keys   = (char **)NULL;
+	b->count  = 0;
 }
 
 void gb_disconnect( gbClient *c ){

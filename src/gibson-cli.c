@@ -212,21 +212,30 @@ static void gbc_handle_response(){
 	else if( client.reply.code == REPL_OK )
 		printf( "<REPL_OK>\n" );
 
-	else if( client.reply.code == REPL_VAL )
-		gbc_print_buffer(&client.reply);
-
+	else if( client.reply.code == REPL_VAL ) {
+		if( client.reply.buffer == NULL ){
+            printf( "<REPL_VAL> but NULL buffer, check that your client version is aligned to the server.\n" );
+        }
+        else
+            gbc_print_buffer(&client.reply);
+    }
 	else if( client.reply.code == REPL_KVAL )
 	{
-		gbMultiBuffer mb;
-		int i = 0;
+        if( client.reply.buffer == NULL ){
+            printf( "<REPL_KVAL> but NULL buffer, check that your client version is aligned to the server.\n" );
+        }
+        else {
+            gbMultiBuffer mb;
+            int i = 0;
 
-		gb_reply_multi( &client, &mb );
-		for( i = 0; i < mb.count; i++ ){
-			printf( "%s => ", mb.keys[i] );
-			gbc_print_buffer(&mb.values[i]);
-		}
+            gb_reply_multi( &client, &mb );
+            for( i = 0; i < mb.count; i++ ){
+                printf( "%s => ", mb.keys[i] );
+                gbc_print_buffer(&mb.values[i]);
+            }
 
-		gb_reply_multi_free(&mb);
+            gb_reply_multi_free(&mb);
+        }
 	}
 }
 
