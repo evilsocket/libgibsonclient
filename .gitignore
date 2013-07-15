@@ -27,3 +27,4 @@ Makefile
 cmake_install.cmake
 install_manifest.txt
 gibson.build
+gibson-cli

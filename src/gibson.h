@@ -106,8 +106,8 @@ typedef struct
 	short code;   		   // used to tag this buffer ( for reply code )
 	gbEncoding encoding;   // buffer encoding
 	unsigned char *buffer; // buffer
-	size_t rsize; 		   // real buffer size
-	size_t size;  		   // current buffer size
+	uint32_t rsize; 		   // real buffer size
+	uint32_t size;  		   // current buffer size
 }
 gbBuffer;
 
@@ -119,7 +119,7 @@ gbBuffer;
 
 typedef struct
 {
-	size_t count;
+	uint32_t  count;
 	char    **keys;
 	gbBuffer *values;
 }
@@ -163,7 +163,7 @@ int gb_ping(gbClient *c);
 int gb_quit(gbClient *c);
 
 const unsigned char *gb_reply_raw(gbClient *c);
-long gb_reply_number(gbClient *c);
+long gb_reply_number(gbBuffer *b);
 void gb_reply_multi(gbClient *c, gbMultiBuffer *b);
 void gb_reply_multi_free(gbMultiBuffer *b);
 

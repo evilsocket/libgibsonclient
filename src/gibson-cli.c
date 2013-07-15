@@ -186,7 +186,7 @@ static void gbc_print_buffer( gbBuffer *buffer ){
 		printf( "\n" );
 	}
 	else if( buffer->encoding == GB_ENC_NUMBER ){
-		printf( "<NUMBER> %ld\n", *(long *)buffer->buffer );
+		printf( "<NUMBER> %ld\n", gb_reply_number(buffer) );
 	}
 	else {
 		printf( "<UNKNOWN ENCODING 0x%2X>\n", buffer->encoding );

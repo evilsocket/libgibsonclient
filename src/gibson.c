@@ -443,21 +443,21 @@ const unsigned char *gb_reply_raw(gbClient *c){
 	return c->reply.buffer;
 }
 
-long gb_reply_number(gbClient *c){
-	if( c->reply.size == sizeof(long) )
-		return *(long *)c->reply.buffer;
+long gb_reply_number(gbBuffer *b){
+    if( b->size == sizeof(long) )
+        return *(long *)b->buffer;
 
-	else if( c->reply.size == sizeof(int) )
-		return *(int *)c->reply.buffer;
+	else if( b->size == sizeof(int) )
+		return *(int *)b->buffer;
 
-	else if( c->reply.size == sizeof(short) )
-		return *(short *)c->reply.buffer;
+	else if( b->size == sizeof(short) )
+		return *(short *)b->buffer;
 
-	else if( c->reply.size == sizeof(char) )
-		return *(char *)c->reply.buffer;
+	else if( b->size == sizeof(char) )
+		return *(char *)b->buffer;
 
 	else
-		return *(long *)c->reply.buffer;
+		return *(long *)b->buffer;
 }
 
 void gb_reply_multi(gbClient *c, gbMultiBuffer *b){
