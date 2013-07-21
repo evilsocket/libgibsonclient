@@ -28,6 +28,59 @@
  */
 #include "gibson.h"
 
+#if (BYTE_ORDER == LITTLE_ENDIAN)
+#   define memrev16ifbe(p) (p)
+#   define memrev32ifbe(p) (p)
+#   define memrev64ifbe(p) (p)
+#else
+#   define memrev16ifbe(p) memrev16(p)
+#   define memrev32ifbe(p) memrev32(p)
+#   define memrev64ifbe(p) memrev64(p)
+
+static void *memrev16(void *p) {
+    unsigned char *x = p, t;
+
+    t = x[0];
+    x[0] = x[1];
+    x[1] = t;
+
+    return p;
+}
+
+static void *memrev32(void *p) {
+    unsigned char *x = p, t;
+
+    t = x[0];
+    x[0] = x[3];
+    x[3] = t;
+    t = x[1];
+    x[1] = x[2];
+    x[2] = t;
+
+    return p;
+}
+
+static void *memrev64(void *p) {
+    unsigned char *x = p, t;
+
+    t = x[0];
+    x[0] = x[7];
+    x[7] = t;
+    t = x[1];
+    x[1] = x[6];
+    x[6] = t;
+    t = x[2];
+    x[2] = x[5];
+    x[5] = t;
+    t = x[3];
+    x[3] = x[4];
+    x[4] = t;
+
+    return p;
+}
+
+#endif
+
 static char __gb_error_buffer[1024] = {0};
 
 #define GB_SETLASTERROR( fmt, ... ) memset( __gb_error_buffer, 0x00, 1024 ); \
@@ -208,7 +261,6 @@ int gb_recv( gbClient *c, unsigned int msecs, void *buf, int size ) {
     }
 }
 
-
 int gb_send(gbClient *c, unsigned int msecs, void *buf, int size) {
 	fd_set fds;
 	struct timeval tv;
@@ -251,10 +303,10 @@ int gb_send_command( gbClient *c, short cmd, void *data, uint32_t len ){
 
 	if( c->fd )
 	{
-		if( ( c->error = gb_send( c, c->timeout, &csize, sizeof(uint32_t) ) ) != sizeof(uint32_t) )
+		if( ( c->error = gb_send( c, c->timeout, memrev32ifbe(&csize), sizeof(uint32_t) ) ) != sizeof(uint32_t) )
 			return c->error;
 
-		else if( ( c->error = gb_send( c, c->timeout, &cmd, sizeof(short) ) ) != sizeof(short) )
+		else if( ( c->error = gb_send( c, c->timeout, memrev16ifbe(&cmd), sizeof(short) ) ) != sizeof(short) )
 			return c->error;
 
 		else if( ( c->error = gb_send( c, c->timeout, data, len ) ) != len )
@@ -268,6 +320,11 @@ int gb_send_command( gbClient *c, short cmd, void *data, uint32_t len ){
 
 		else if( ( c->error = gb_recv( c, c->timeout, &rsize, sizeof(uint32_t) ) ) != sizeof(uint32_t) )
 			return c->error;
+
+#if (BYTE_ORDER != LITTLE_ENDIAN)
+        memrev16ifbe(&c->reply.code);
+        memrev32ifbe(&rsize);
+#endif
 
 		c->error = 0;
 
@@ -472,6 +529,11 @@ void gb_reply_multi(gbClient *c, gbMultiBuffer *b){
     
     if( c->reply.buffer != NULL ){
         b->count  = *(uint32_t *)p; p += sizeof(uint32_t);
+
+#if (BYTE_ORDER != LITTLE_ENDIAN)
+        memrev32(&b->count);
+#endif
+
         b->keys   = (char **)malloc( b->count * sizeof(char *) );
         b->values = (gbBuffer *)malloc( b->count * sizeof(gbBuffer) );
 
@@ -482,6 +544,10 @@ void gb_reply_multi(gbClient *c, gbMultiBuffer *b){
 
             klen = *(uint32_t *)p; p += sizeof(uint32_t);
 
+#if (BYTE_ORDER != LITTLE_ENDIAN)
+        memrev32(&klen);
+#endif
+
             b->keys[i] = (char *)calloc( 1, klen );
 
             memcpy( b->keys[i], p, klen ); p += klen;
@@ -489,6 +555,10 @@ void gb_reply_multi(gbClient *c, gbMultiBuffer *b){
             enc   = *(gbEncoding *)p; p += sizeof(gbEncoding);
 
             vsize = *(uint32_t *)p; p += sizeof(uint32_t);
+
+#if (BYTE_ORDER != LITTLE_ENDIAN)
+        memrev32(&vsize);
+#endif
 
             if( vsize > v->rsize ){
                 v->buffer = realloc( v->buffer, vsize );
