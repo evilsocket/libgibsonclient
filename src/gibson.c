@@ -32,10 +32,17 @@
 #   define memrev16ifbe(p) (p)
 #   define memrev32ifbe(p) (p)
 #   define memrev64ifbe(p) (p)
+#   define memrevifbe(p)   (p)
 #else
 #   define memrev16ifbe(p) memrev16(p)
 #   define memrev32ifbe(p) memrev32(p)
 #   define memrev64ifbe(p) memrev64(p)
+
+#   if __x86_64__ || __ppc64__
+#       define memrevifbe memrev64ifbe
+#else
+#       define memrevifbe memrev32ifbe
+#endif	
 
 static void *memrev16(void *p) {
     unsigned char *x = p, t;
@@ -501,20 +508,24 @@ const unsigned char *gb_reply_raw(gbClient *c){
 }
 
 long gb_reply_number(gbBuffer *b){
-    if( b->size == sizeof(long) )
-        return *(long *)b->buffer;
+    if( b->size == sizeof(int) ){
+	    int n = *(int *)b->buffer;
 
-	else if( b->size == sizeof(int) )
-		return *(int *)b->buffer;
+        return *(int *)memrev32ifbe(&n);
+    }
+	else if( b->size == sizeof(short) ){
+		short n = *(short *)b->buffer;
 
-	else if( b->size == sizeof(short) )
-		return *(short *)b->buffer;
-
+        return *(short *)memrev16ifbe(&n);
+    }
 	else if( b->size == sizeof(char) )
 		return *(char *)b->buffer;
 
-	else
-		return *(long *)b->buffer;
+	else {
+        long n = *(long *)b->buffer;
+
+        return *(long *)memrevifbe(&n);
+    }
 }
 
 void gb_reply_multi(gbClient *c, gbMultiBuffer *b){
@@ -528,12 +539,7 @@ void gb_reply_multi(gbClient *c, gbMultiBuffer *b){
 	b->values = NULL;
     
     if( c->reply.buffer != NULL ){
-        b->count  = *(uint32_t *)p; p += sizeof(uint32_t);
-
-#if (BYTE_ORDER != LITTLE_ENDIAN)
-        memrev32(&b->count);
-#endif
-
+        b->count  = *(uint32_t *)memrev32ifbe(p); p += sizeof(uint32_t);
         b->keys   = (char **)malloc( b->count * sizeof(char *) );
         b->values = (gbBuffer *)malloc( b->count * sizeof(gbBuffer) );
 
@@ -542,11 +548,7 @@ void gb_reply_multi(gbClient *c, gbMultiBuffer *b){
 
             v = &b->values[i];
 
-            klen = *(uint32_t *)p; p += sizeof(uint32_t);
-
-#if (BYTE_ORDER != LITTLE_ENDIAN)
-        memrev32(&klen);
-#endif
+            klen = *(uint32_t *)memrev32ifbe(p); p += sizeof(uint32_t);
 
             b->keys[i] = (char *)calloc( 1, klen );
 
@@ -554,11 +556,7 @@ void gb_reply_multi(gbClient *c, gbMultiBuffer *b){
 
             enc   = *(gbEncoding *)p; p += sizeof(gbEncoding);
 
-            vsize = *(uint32_t *)p; p += sizeof(uint32_t);
-
-#if (BYTE_ORDER != LITTLE_ENDIAN)
-        memrev32(&vsize);
-#endif
+            vsize = *(uint32_t *)memrev32ifbe(p); p += sizeof(uint32_t);
 
             if( vsize > v->rsize ){
                 v->buffer = realloc( v->buffer, vsize );
