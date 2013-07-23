@@ -39,6 +39,8 @@ static unsigned short port = 10128;
 static char history[0xFF] = {0},
 		   *home = NULL;
 
+static unsigned long timeout = 1000;
+
 typedef void (*gbc_op_handler)(char *);
 
 struct gbc_op_handler {
@@ -74,12 +76,13 @@ static char *op_descriptions[] = {
 static void gbc_help( char **argv, int exitcode ){
 	printf( "Gibson client utility.\n\n" );
 
-	printf( "%s [-h|--help] [-a|--address ADDRESS] [-p|--port PORT] [-u|--unix UNIX_SOCKET_PATH]\n\n", argv[0] );
+	printf( "%s [-h|--help] [-a|--address ADDRESS] [-p|--port PORT] [-u|--unix UNIX_SOCKET_PATH] [-t|--timeout TIMEOUT]\n\n", argv[0] );
 
 	printf("  -h, --help            	  Print this help and exit.\n");
 	printf("  -a, --address ADDRESS   	  TCP address of Gibson instance.\n" );
 	printf("  -p, --port PORT   		  TCP port of Gibson instance.\n" );
-	printf("  -u, --unix UNIX_SOCKET_PATH Unix socket path of Gibson instance ( overrides TCP arguments ).\n\n" );
+	printf("  -u, --unix UNIX_SOCKET_PATH Unix socket path of Gibson instance ( overrides TCP arguments ).\n" );
+    printf("  -t, --timeout TIMEOUT       Timeout in milliseconds of the socket ( default to 1000 ).\n\n" );
 
 	exit(exitcode);
 }
@@ -91,10 +94,11 @@ static void gbc_commandline( int argc, char **argv ){
 		{"address", required_argument, 0, 'a'},
 		{"port",    required_argument, 0, 'p'},
 		{"unix",    required_argument, 0, 'u'},
+        {"timeout", required_argument, 0, 't'},
 		{0, 0, 0, 0}
 	};
 
-	static char *short_options = "ha:p:u:";
+	static char *short_options = "ha:p:u:t:";
 
 	int c, option_index = 0;
 	while(1){
@@ -135,6 +139,12 @@ static void gbc_commandline( int argc, char **argv ){
 
 			break;
 
+            case 't':
+
+                timeout = atol(optarg);
+
+            break;
+
 			default:
 				gbc_help(argv,1);
 		}
@@ -147,10 +157,10 @@ static int gbc_connect(){
 	int ret = -1;
 
 	if( *unixsocket != 0x00 ){
-		ret = gb_unix_connect( &client, unixsocket, 100 );
+		ret = gb_unix_connect( &client, unixsocket, timeout );
 	}
 	else {
-		ret = gb_tcp_connect( &client, address, port, 100 );
+		ret = gb_tcp_connect( &client, address, port, timeout );
 	}
 
 	if( ret != 0 ){
