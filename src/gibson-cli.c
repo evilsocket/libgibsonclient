@@ -570,7 +570,7 @@ int main( int argc, char **argv )
 			}
 			else if( strcmp( input, ":help" ) == 0 || strcmp( input, ":h" ) == 0 ){
 				int i;
-				for( i = OP_SET; i <= OP_META; ++i ){
+				for( i = OP_SET; i <= OP_KEYS; ++i ){
 					printf( "\t%s\n", op_descriptions[i] );
 				}
 			}
