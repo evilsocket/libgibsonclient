@@ -8,7 +8,13 @@ OPTION( WITH_DEBUG "enable debug module" OFF )
 include(CheckIncludeFiles)
 
 # configure variables
-set( PREFIX usr )
+if (PREFIX)
+    message(STATUS "Using prefix ${PREFIX}")
+else (WITH_DEBUG)
+	message(STATUS "Using default prefix")
+    set( PREFIX /usr )
+endif ()
+
 set( PROJECT "libgibsonclient" )
 set( AUTHOR "Simone Margaritelli <evilsocket at gmail dot com>" )
 set( LICENSE "BSD License" )
@@ -43,13 +49,13 @@ set_target_properties( ${PROJECT} PROPERTIES
 					   # Compile flags
 					   COMPILE_FLAGS ${COMMON_CFLAGS}
 					   # Install name directory (for Mac OS X install_name_tool)
-					   INSTALL_NAME_DIR /${PREFIX}/lib )
+					   INSTALL_NAME_DIR ${PREFIX}/lib )
 
 add_executable( gibson-cli src/linenoise/linenoise.c src/gibson-cli.c )
 target_link_libraries( gibson-cli libgibsonclient )
 
-install( FILES ${HEADERS} DESTINATION /${PREFIX}/include/ )
-install( FILES gibson-cli DESTINATION /${PREFIX}/bin/
+install( FILES ${HEADERS} DESTINATION ${PREFIX}/include/ )
+install( FILES gibson-cli DESTINATION ${PREFIX}/bin/
  PERMISSIONS
  OWNER_READ 
  OWNER_WRITE 
@@ -61,7 +67,7 @@ install( FILES gibson-cli DESTINATION /${PREFIX}/bin/
 )
 
 install( TARGETS ${PROJECT} 
-		 DESTINATION /${PREFIX}/lib 
+		 DESTINATION ${PREFIX}/lib 
 		 PERMISSIONS
 		 OWNER_READ 
 		 OWNER_WRITE 
