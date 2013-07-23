@@ -68,8 +68,7 @@ static char *op_descriptions[] = {
 	"STATS",
 	"PING",
 	"META <key> size|encoding|access|created|ttl|left|lock",
-	"MSIZEOF <prefix>",
-	"ENCOF <key>"
+	"KEYS <prefix>"
 };
 
 static void gbc_help( char **argv, int exitcode ){
@@ -468,6 +467,19 @@ void gbc_meta_handler(char *input){
 	}
 }
 
+void gbc_keys_handler(char *input){
+	char key[0xFF] = {0};
+
+	gbc_op_args( input, "%s", 1, OP_KEYS, key );
+
+	if( gbc_connect() ){
+		gb_keys( &client, key, strlen(key) );
+		gbc_handle_response();
+		gb_disconnect(&client);
+	}
+}
+
+
 void gbc_stats_handler(char *input){
 	if( gbc_connect() ){
 		gb_stats( &client );
@@ -505,6 +517,7 @@ static struct gbc_op_handler op_handlers[] = {
 	{ "stats", gbc_stats_handler },
 	{ "ping", gbc_ping_handler },
     { "meta", gbc_meta_handler },
+    { "keys", gbc_keys_handler },
 	{ NULL, NULL }
 };
 

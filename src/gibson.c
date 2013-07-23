@@ -491,6 +491,10 @@ int gb_meta(gbClient *c, char *key, int klen, char *meta, int mlen ){
 	return gb_send_command_assert( c, OP_META, c->request.buffer, c->request.size, REPL_VAL );
 }
 
+int gb_keys(gbClient *c, char *expr, int elen) {
+	return gb_send_command_assert(c, OP_KEYS, expr, elen, REPL_KVAL);
+}
+
 int gb_stats(gbClient *c) {
 	return gb_send_command_assert(c, OP_STATS, NULL, 0, REPL_KVAL);
 }
