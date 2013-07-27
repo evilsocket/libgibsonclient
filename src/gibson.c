@@ -252,7 +252,7 @@ int gb_unix_connect( gbClient *c, char *socket, int timeout ){
 }
 
 int gb_recv( gbClient *c, unsigned int msecs, void *buf, int size ) {
-    int read = 0;
+    int read = 0, chunk = 0;
 
     do
     {
@@ -260,7 +260,9 @@ int gb_recv( gbClient *c, unsigned int msecs, void *buf, int size ) {
         c->error = gb_fd_select( c->fd, msecs, 1 );
         if( c->error > 0 ){
             // keep reading
-            read += recv( c->fd, (char *)buf + read, size - read, 0 );
+            chunk = recv( c->fd, (char *)buf + read, size - read, 0 );
+            if( chunk > 0 )
+                read += chunk;
         }
         else if ( c->error == 0 ){
             GB_SETLASTERROR( "Read operation timeout: %d", errno );
@@ -271,9 +273,14 @@ int gb_recv( gbClient *c, unsigned int msecs, void *buf, int size ) {
             return ( c->error = -1 );
         }
     }
-    while( read < size && errno == EINPROGRESS );
+    while( chunk != -1 && read < size );
 
-    return read;
+    if( read != size ){
+        GB_SETLASTERROR( "Read operation error: %d", errno );
+        return ( c->error = -1 );
+    }
+    else
+        return read;
 }
 
 int gb_send(gbClient *c, unsigned int msecs, void *buf, int size) {
