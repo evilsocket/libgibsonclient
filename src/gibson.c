@@ -251,73 +251,60 @@ int gb_unix_connect( gbClient *c, char *socket, int timeout ){
 	return 0;
 }
 
-int gb_recv( gbClient *c, unsigned int msecs, void *buf, int size ) {
-    int read = 0, chunk = 0;
+#define GB_IO_READ  0
+#define GB_IO_WRITE 1
 
-    do
-    {
-        // wait for a readable state
-        c->error = gb_fd_select( c->fd, msecs, 1 );
-        if( c->error > 0 ){
-            // keep reading
-            chunk = recv( c->fd, (char *)buf + read, size - read, 0 );
-            if( chunk > 0 )
-                read += chunk;
-        }
-        else if ( c->error == 0 ){
-            GB_SETLASTERROR( "Read operation timeout: %d", errno );
-            return ( c->error = -2 );
-        }
-        else {
-            GB_SETLASTERROR( "Read operation error: %d", errno );
-            return ( c->error = -1 );
-        }
+typedef ssize_t (*gbc_io_handler)( int, void *, size_t, int );
+
+static int gb_io( gbClient *c, unsigned int msecs, void *buf, int size, int direction ){
+    fd_set fds, *pin, *pout;
+    gbc_io_handler io;
+    struct timeval tv;
+    int processed = 0;
+    
+    if( direction == GB_IO_READ ){
+        pin  = &fds;
+        pout = NULL;
+        io   = (gbc_io_handler)recv;
+    }   
+    else {
+        pin  = NULL;
+        pout = &fds;
+        io   = (gbc_io_handler)send;
     }
-    while( chunk != -1 && read < size );
 
-    if( read != size ){
-        GB_SETLASTERROR( "Read operation error: %d", errno );
-        return ( c->error = -1 );
-    }
-    else
-        return read;
-}
-
-int gb_send(gbClient *c, unsigned int msecs, void *buf, int size) {
-	fd_set fds;
-	struct timeval tv;
-	int sent = 0;
-
-	/* NOTE: On Linux, select() modifies timeout to reflect the amount
+    /* NOTE: On Linux, select() modifies timeout to reflect the amount
 	 * of time not slept, on other systems it is likely not the same */
 	tv.tv_sec = msecs / 1000;
 	tv.tv_usec = (msecs % 1000) * 1000;
 
-	while (sent < size) {
-		FD_ZERO(&fds);
+    while( processed < size ) {
+        FD_ZERO(&fds);
 		FD_SET(c->fd, &fds);
 
-		c->error = select(c->fd + 1, NULL, &fds, NULL, &tv);
+		c->error = select(c->fd + 1, pin, pout, NULL, &tv);
 		if (c->error > 0) {
-			c->error = send(c->fd, (char *)buf + sent, size - sent, 0);
+			c->error = io(c->fd, (char *)buf + processed, size - processed, 0);
 			if (c->error < 0){
-                GB_SETLASTERROR( "Write operation error: %d", errno );
+                GB_SETLASTERROR( "I/O operation error: %d", errno );
                 return c->error;
             }
 
-			sent += c->error;
-		// timeout || error
+			processed += c->error;
 		}
 		else if ( c->error <= 0 ){
-            GB_SETLASTERROR( "Write operation timeout or error: %d", errno );
+            GB_SETLASTERROR( "I/O operation timeout or error: %d", errno );
 			return c->error;
         }
 	}
 
 	c->error = 0;
 
-	return sent;
-}
+	return processed;
+}   
+
+#define gb_recv( c, ms, b, s ) gb_io( c, ms, b, s, GB_IO_READ )
+#define gb_send( c, ms, b, s ) gb_io( c, ms, b, s, GB_IO_WRITE )
 
 int gb_send_command( gbClient *c, short cmd, void *data, uint32_t len ){
 	uint32_t csize = sizeof(short) + len,

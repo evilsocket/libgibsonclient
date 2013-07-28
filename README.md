@@ -22,8 +22,7 @@ In order to compile libgibsonclient, you will need cmake and autotools installed
 
     $ git clone https://github.com/evilsocket/libgibsonclient.git
     $ cd libgibsonclient
-    $ git submodule init
-    $ git submodule update
+    $ git submodule update --init
     $ cmake .
     $ make
     # make install
@@ -32,11 +31,12 @@ Client Usage
 ---
 First of all, start with a gibson-cli -h to get the following help menu.
 
-    gibson-cli [-h|--help] [-a|--address ADDRESS] [-p|--port PORT] [-u|--unix UNIX_SOCKET_PATH]
+    gibson-cli [-h|--help] [-a|--address ADDRESS] [-p|--port PORT] [-u|--unix UNIX_SOCKET_PATH] [-t|--timeout TIMEOUT]
         -h, --help            	    Print this help and exit.
         -a, --address ADDRESS   	TCP address of Gibson instance.
         -p, --port PORT   		    TCP port of Gibson instance.
         -u, --unix UNIX_SOCKET_PATH Unix socket path of Gibson instance ( overrides TCP arguments ).
+        -t, --timeout               Timeout in milliseconds of the socket ( default to 1000 ).
 
 Let's say you want to connect to your local Gibson UNIX domain socket.
 
