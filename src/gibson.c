@@ -139,7 +139,7 @@ int gb_tcp_connect(gbClient *c, char *address, int port, int timeout) {
 	c->timeout = timeout;
 	c->address[0] = 0x00;
 
-	if( address == NULL ) address = "127.0.0.1";
+	if( address == NULL || *address == 0x00 ) address = "127.0.0.1";
 
 	if( port == 0 ) port = 10128;
 
@@ -210,6 +210,8 @@ int gb_unix_connect( gbClient *c, char *socket, int timeout ){
 	c->error = 0;
 	c->timeout = timeout;
 	c->address[0] = 0x00;
+
+    if( socket == NULL || *socket == 0x00 ) socket = "/var/run/gibson.sock";
 
 	if( ( c->fd = gb_create_socket( AF_LOCAL ) ) == -1 ){
 		return c->error;
