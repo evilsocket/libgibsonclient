@@ -168,30 +168,31 @@ int gb_tcp_connect(gbClient *c, char *address, int port, int timeout) {
 
 	flags = fcntl( c->fd, F_GETFL );
 	if( ( c->error = fcntl( c->fd, F_SETFL, flags | O_NONBLOCK ) ) < 0 ) {
-        GB_SETLASTERROR( "Unable to set socket in non blocking mode: %d", errno );
+        GB_SETLASTERROR( "( %d ) %s", errno, strerror(errno) );
 		return c->error;
 	}
 
 	if( ( c->error = connect( c->fd, (struct sockaddr *)&sa, sizeof(sa) ) ) != 0 ){
 		if (errno != EINPROGRESS){
-			GB_SETLASTERROR( "TCP connection to %s:%d failed : %d", address, port, errno );
+			GB_SETLASTERROR( "( %d ) %s", errno, strerror(errno) );
             return c->error;
         }
 		else if( gb_fd_select( c->fd, c->timeout, 0 ) > 0) {
+            
 			int err;
 			unsigned int len = sizeof(err);
 			if( ( c->error = getsockopt( c->fd, SOL_SOCKET, SO_ERROR, &err, &len) ) == -1 || err ){
-                GB_SETLASTERROR( "Socket operation timeout ( SO_ERROR = %d ): %d", err, errno );
-				return ( c->error = err );
+    			GB_SETLASTERROR( "( %d ) %s", err, strerror(err) );
+                return ( c->error = err );
 			}
 		}
 		else {
-			GB_SETLASTERROR( "Socket operation timeout: %d", errno );
-            return c->error;
+			GB_SETLASTERROR( "( %d ) %s", errno, strerror(errno) );
+            return ( c->error =  errno );
         }
-	}
-
-	strncpy( c->address, inet_ntoa(sa.sin_addr), 0xFF );
+	}	
+    
+    strncpy( c->address, inet_ntoa(sa.sin_addr), 0xFF );
 	c->port = port;
 
 	GB_INIT_BUFFER( c->reply );
@@ -219,26 +220,27 @@ int gb_unix_connect( gbClient *c, char *socket, int timeout ){
 
 	flags = fcntl( c->fd, F_GETFL );
 	if( ( c->error = fcntl( c->fd, F_SETFL, flags | O_NONBLOCK ) ) < 0 ) {
-        GB_SETLASTERROR( "Unable to set socket in non blocking mode: %d", errno );
+        GB_SETLASTERROR( "( %d ) %s", errno, strerror(errno) );
 		return c->error;
 	}
 
 	if( ( c->error = connect( c->fd, (struct sockaddr *)&sa, sizeof(sa) ) ) != 0 ){
 		if (errno != EINPROGRESS){
-			GB_SETLASTERROR( "Unix domain connection to %s failed : %d", socket, errno );
+			GB_SETLASTERROR( "( %d ) %s", errno, strerror(errno) );
             return c->error;
         }
 		else if( gb_fd_select( c->fd, c->timeout, 0 ) > 0) {
+            
 			int err;
 			unsigned int len = sizeof(err);
 			if( ( c->error = getsockopt( c->fd, SOL_SOCKET, SO_ERROR, &err, &len) ) == -1 || err ){
-                GB_SETLASTERROR( "Socket operation timeout ( SO_ERROR = %d ): %d", err, errno );
-				return ( c->error = err );
+    			GB_SETLASTERROR( "( %d ) %s", err, strerror(err) );
+                return ( c->error = err );
 			}
 		}
 		else {
-			GB_SETLASTERROR( "Socket operation timeout: %d", errno );
-            return c->error;
+			GB_SETLASTERROR( "( %d ) %s", errno, strerror(errno) );
+            return ( c->error =  errno );
         }
 	}
 
