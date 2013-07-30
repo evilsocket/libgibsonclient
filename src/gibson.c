@@ -161,9 +161,15 @@ int gb_tcp_connect(gbClient *c, char *address, int port, int timeout) {
 		hints.ai_family = AF_INET;
 		hints.ai_socktype = SOCK_STREAM;
 
-		getaddrinfo( address, NULL, &hints, &info );
-		memcpy(&sa.sin_addr.s_addr, &(info->ai_addr->sa_data[2]), sizeof(in_addr_t) );
-		freeaddrinfo(info);
+		if( getaddrinfo( address, NULL, &hints, &info ) == 0 ){
+	    	memcpy(&sa.sin_addr.s_addr, &(info->ai_addr->sa_data[2]), sizeof(in_addr_t) );
+		    freeaddrinfo(info);
+        }
+        else
+        {
+            GB_SETLASTERROR( "( %d ) %s", errno, strerror(errno) );
+		    return ( c->error = errno );
+        }
 	}
 
 	flags = fcntl( c->fd, F_GETFL );
