@@ -3,7 +3,9 @@
 *.lo
 *.so
 *.so.*
+*.dylib
 *.swp
+*.swo
 *.deb
 *.rpm
 *.gz

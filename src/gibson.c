@@ -566,7 +566,7 @@ void gb_reply_multi(gbClient *c, gbMultiBuffer *b){
 
             klen = *(uint32_t *)memrev32ifbe(p); p += sizeof(uint32_t);
 
-            b->keys[i] = (char *)calloc( 1, klen );
+            b->keys[i] = (char *)calloc( 1, klen + 1 );
 
             memcpy( b->keys[i], p, klen ); p += klen;
 
