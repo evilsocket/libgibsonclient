@@ -32,7 +32,7 @@
 #include <string.h>
 
 static char address[0xFF] = {0},
-			unixsocket[0xFF] = {0};
+			unixsocket[0xFF] = { "/var/run/gibson.sock" };
 
 static unsigned short port = 10128;
 

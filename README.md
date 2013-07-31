@@ -38,9 +38,13 @@ First of all, start with a gibson-cli -h to get the following help menu.
         -u, --unix UNIX_SOCKET_PATH Unix socket path of Gibson instance ( overrides TCP arguments ).
         -t, --timeout               Timeout in milliseconds of the socket ( default to 1000 ).
 
-Let's say you want to connect to your local Gibson UNIX domain socket.
+Let's say you want to connect to your local Gibson UNIX domain socket ( this is the default behaviour if gibson-cli is invoked without command line arguments ).
 
     gibson-cli -u /var/run/gibson.sock
+
+Or simply
+
+    gibson-cli
 
 Then, use the ':help' ( or just ':h' ) shortcut to get a list of available commands.
 
@@ -69,6 +73,14 @@ Then, use the ':help' ( or just ':h' ) shortcut to get a list of available comma
         ENCOF <key>
 
 You can now start to use the client.
+
+To quit, simpli use
+
+    local> :quit
+
+Or
+
+    local> :q
 
 License
 ---
