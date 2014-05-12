@@ -30,6 +30,7 @@
 #include "linenoise/linenoise.h"
 #include <getopt.h>
 #include <string.h>
+#include <ctype.h>
 
 static char address[0xFF] = {0},
 			unixsocket[0xFF] = { "/var/run/gibson.sock" };
