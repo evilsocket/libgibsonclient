@@ -27,7 +27,7 @@ set( VERSION "${MAJOR_VERSION}.${MINOR_VERSION}.${PATCH_LEVEL}b" )
 if (WITH_DEBUG)
 	message(STATUS "Configuring for debug")
 	set( CMAKE_BUILD_TYPE Debug )
-	set( OPTIMIZATION "-g -pg" )
+    set( OPTIMIZATION "-g -pg -DENABLE_DEBUG_PRINT" )
 else (WITH_DEBUG)
 	message(STATUS "Configuring for release")
 	set( CMAKE_BUILD_TYPE Release )
@@ -52,6 +52,7 @@ set_target_properties( ${PROJECT} PROPERTIES
 					   INSTALL_NAME_DIR ${PREFIX}/lib )
 
 add_executable( gibson-cli src/linenoise/linenoise.c src/gibson-cli.c )
+set_source_files_properties( src/gibson-cli.c PROPERTIES COMPILE_FLAGS ${COMMON_CFLAGS} )
 target_link_libraries( gibson-cli libgibsonclient )
 
 install( FILES ${HEADERS} DESTINATION ${PREFIX}/include/ )

@@ -90,9 +90,11 @@ static void *memrev64(void *p) {
 
 static char __gb_error_buffer[1024] = {0};
 
-#define GB_SETLASTERROR( fmt, ... ) memset( __gb_error_buffer, 0x00, 1024 ); \
-                                    sprintf( __gb_error_buffer, fmt, __VA_ARGS__ )
-
+#define GB_SETLASTERROR( fmt, ... ) \
+    memset( __gb_error_buffer, 0x00, 1024 ); \
+    sprintf( __gb_error_buffer, fmt, __VA_ARGS__ ); \
+    GB_DEBUG( "[D] last error set to '%s'\n", __gb_error_buffer )
+    
 void gb_getlasterror( char *buffer, size_t size ) {
     memset( buffer, 0x00, size );
     strncpy( buffer, __gb_error_buffer, size );
@@ -143,10 +145,24 @@ int gb_tcp_connect(gbClient *c, char *address, int port, int timeout) {
 
 	if( port == 0 ) port = 10128;
 
-	if( ( c->fd = gb_create_socket( AF_INET ) ) == -1 ||
-		( c->error = setsockopt( c->fd, SOL_SOCKET, SO_KEEPALIVE, (void *) &yes, sizeof(yes) ) ) == -1 ||
-		( c->error = setsockopt( c->fd, IPPROTO_TCP, TCP_NODELAY, (void *) &yes, sizeof(yes) ) ) == -1 )
+    if( ( c->fd = gb_create_socket( AF_INET ) ) == -1 )
+    {
+        return -1;
+    }
+    else if( ( c->error = setsockopt( c->fd, SOL_SOCKET, SO_KEEPALIVE, (void *) &yes, sizeof(yes) ) ) == -1 )
+    {
+        GB_DEBUG( "[D] setsockopt SO_KEEPALIVE failed: %d, errno = %d\n", c->error, errno );
+
+		GB_SETLASTERROR( "( %d ) %s", errno, strerror(errno) );
+        
+        return c->error;
+    }
+    else if( ( c->error = setsockopt( c->fd, IPPROTO_TCP, TCP_NODELAY, (void *) &yes, sizeof(yes) ) ) == -1 )
 	{
+        GB_DEBUG( "[D] setsockopt TCP_NODELAY failed: %d, errno = %d\n", c->error, errno );
+        
+		GB_SETLASTERROR( "( %d ) %s", errno, strerror(errno) );
+        
 		return c->error;
 	}
 
@@ -155,13 +171,15 @@ int gb_tcp_connect(gbClient *c, char *address, int port, int timeout) {
 
 	struct addrinfo hints, *info;
 
-	if( inet_aton( address, &sa.sin_addr ) == 0 ){
+	if( inet_aton( address, &sa.sin_addr ) == 0 )
+    {
 		memset(&hints, 0, sizeof(hints));
 
 		hints.ai_family = AF_INET;
 		hints.ai_socktype = SOCK_STREAM;
 
-		if( getaddrinfo( address, NULL, &hints, &info ) == 0 ){
+		if( getaddrinfo( address, NULL, &hints, &info ) == 0 )
+        {
 	    	memcpy(&sa.sin_addr.s_addr, &(info->ai_addr->sa_data[2]), sizeof(in_addr_t) );
 		    freeaddrinfo(info);
         }
@@ -183,8 +201,8 @@ int gb_tcp_connect(gbClient *c, char *address, int port, int timeout) {
 			GB_SETLASTERROR( "( %d ) %s", errno, strerror(errno) );
             return c->error;
         }
-		else if( gb_fd_select( c->fd, c->timeout, 0 ) > 0) {
-            
+		else if( gb_fd_select( c->fd, c->timeout, 0 ) > 0)
+        {    
 			int err;
 			unsigned int len = sizeof(err);
 			if( ( c->error = getsockopt( c->fd, SOL_SOCKET, SO_ERROR, &err, &len) ) == -1 || err ){
@@ -320,6 +338,8 @@ int gb_send_command( gbClient *c, short cmd, void *data, uint32_t len ){
 	uint32_t csize = sizeof(short) + len,
              rsize = 0;
 
+    GB_DEBUG( "[D] sending command %u ( %u bytes of data payload ).\n", cmd, len );
+
 	if( c->fd )
 	{
 		if( ( c->error = gb_send( c, c->timeout, memrev32ifbe(&csize), sizeof(uint32_t) ) ) != sizeof(uint32_t) )
@@ -344,6 +364,10 @@ int gb_send_command( gbClient *c, short cmd, void *data, uint32_t len ){
         memrev16ifbe(&c->reply.code);
         memrev32ifbe(&rsize);
 #endif
+
+        GB_DEBUG( "[D] reply code     : %u\n", c->reply.code );
+        GB_DEBUG( "[D] reply encoding : %u\n", c->reply.encoding );
+        GB_DEBUG( "[D] reply size     : %u\n", rsize );
 
 		c->error = 0;
 

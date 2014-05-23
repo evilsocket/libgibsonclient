@@ -247,6 +247,10 @@ static void gbc_handle_response(){
             gb_reply_multi_free(&mb);
         }
 	}
+    else 
+    {
+        printf( "! Unknown reponse %u !\n", client.reply.code );
+    }
 }
 
 #define gbc_op_args( s, fmt, n, op, ... ) if( sscanf( (s), (fmt), __VA_ARGS__ ) != (n) ){ \
@@ -553,6 +557,8 @@ static void gbc_parse_exec( char *line ){
 
 int main( int argc, char **argv )
 {
+    GB_DEBUG( "\n!!! Warning, you are using a debug build of this library !!!\n" );
+
 	gbc_commandline(argc, argv);
 
 	if( *address == 0x00 && *unixsocket == 0x00 )

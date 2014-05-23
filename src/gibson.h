@@ -56,6 +56,12 @@ extern "C" {
 #include <errno.h>
 #include <stdarg.h>
 
+#ifdef ENABLE_DEBUG_PRINT
+#define GB_DEBUG(...) do{ fprintf( stderr, __VA_ARGS__ ); } while( 0 )
+#else
+#define GB_DEBUG(...) do{ } while ( 0 )
+#endif
+
 #define GB_DEFAULT_BUFFER_SIZE 65535
 
 // Gibson protocol constants
